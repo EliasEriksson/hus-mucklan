@@ -1,0 +1,21 @@
+{
+  "token":  "",
+  "bill_channel_id": 0,
+  "bill_message_channel_id": 0,
+  "bill_manager_id": 0,
+
+  "cleaning_channel": 0,
+  "cleain_message": "Its time to clean the apartment you dirty pigs!",
+  "residents": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "todos": [
+    "You are cleaning the kitchen this week.",
+    "You are vacuming the apartment this week.",
+    "You are scrubbing the bathroom clean with your toothbrush this week.",
+    "You are moping the floors this week."
+  ]
+}
