@@ -1,9 +1,0 @@
-[Unit]
-Description=Mucklan, the housekeeper of FLEMS
-After=multi-user.target
-
-[Service]
-ExecStart=/home/elias-eriksson/.../venv/bin/python /home/elias-eriksson/.../main.py
-
-[Install]
-WantedBy=multi-user.target
