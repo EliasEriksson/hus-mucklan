@@ -17,9 +17,9 @@ class Client(discord.Client):
     bill_message_channel_id: int
     bill_manager_id: int
     cleaning_channel: int
+    clean_message: str
     residents: List[int]
     todos: List[str]
-    clean_message: str
 
     def __init__(self, file: str):
         super(Client, self).__init__()
@@ -43,6 +43,9 @@ class Client(discord.Client):
             await self.asure_dm_exists(user)
             await user.send(todo)
 
+        channel: discord.TextChannel = self.get_channel(self.cleaning_channel)
+        await channel.send(self.clean_message)
+
     async def bill_reminder(self):
         if self.search_channel_for_bills():
             message = ("It looks like you have forgotten to add the bills to the discord channel. There have not been "
@@ -60,13 +63,19 @@ class Client(discord.Client):
             total = sum(bills)
 
             channel: discord.TextChannel = self.get_channel(self.bill_message_channel_id)
+            # message = (f"This month the total rent is ```{total} Kr``` \n"
+            #            f"Each bill is: "
+            #            f"```"
+            #            f"{' Kr, '.join([str(bill) for bill in bills])} Kr"
+            #            f"```"
+            #            f"Sam and Frida each pay ```3000 Kr```\n"
+            #            f"Madeleine, Ludvig and Elias each pay ```{ceil((total - 6000) / 3)} Kr```")
             message = (f"This month the total rent is ```{total} Kr``` \n"
                        f"Each bill is: "
                        f"```"
                        f"{' Kr, '.join([str(bill) for bill in bills])} Kr"
                        f"```"
-                       f"Sam and Frida each pay ```3000 Kr```\n"
-                       f"Madeleine, Ludvig and Elias each pay ```{ceil((total - 6000) / 3)} Kr```")
+                       f"Madeleine, Ludvig, Sam and Elias each pay ```{total / 4} Kr```")
             await channel.send(message)
 
     async def search_channel_for_bills(self) -> List[str]:
