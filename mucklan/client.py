@@ -16,6 +16,7 @@ class Client(discord.Client):
     bill_channel_id: int
     bill_message_channel_id: int
     bill_manager_id: int
+    bill_reminder_message: str
     cleaning_channel: int
     clean_message: str
     residents: List[int]
@@ -48,11 +49,9 @@ class Client(discord.Client):
 
     async def bill_reminder(self):
         if self.search_channel_for_bills():
-            message = ("It looks like you have forgotten to add the bills to the discord channel. There have not been "
-                       "any new aditional attatchments in the channel.")
             bill_manager: discord.User = self.get_user(self.bill_manager_id)
             await self.asure_dm_exists(bill_manager)
-            await bill_manager.send(message)
+            await bill_manager.send(self.bill_reminder_message)
 
     async def anounce_rent(self):
         pdf_urls = await self.search_channel_for_bills()
@@ -63,13 +62,6 @@ class Client(discord.Client):
             total = sum(bills)
 
             channel: discord.TextChannel = self.get_channel(self.bill_message_channel_id)
-            # message = (f"This month the total rent is ```{total} Kr``` \n"
-            #            f"Each bill is: "
-            #            f"```"
-            #            f"{' Kr, '.join([str(bill) for bill in bills])} Kr"
-            #            f"```"
-            #            f"Sam and Frida each pay ```3000 Kr```\n"
-            #            f"Madeleine, Ludvig and Elias each pay ```{ceil((total - 6000) / 3)} Kr```")
             message = (f"This month the total rent is ```{total} Kr``` \n"
                        f"Each bill is: "
                        f"```"
@@ -113,9 +105,9 @@ class Client(discord.Client):
         scheduler.add_job(self.who_cleans_what, "cron", day_of_week=6, hour=10,
                           misfire_grace_time=300)
 
-        scheduler.add_job(self.anounce_rent, "cron", day=25, hour=14,
+        scheduler.add_job(self.anounce_rent, "cron", day=25, hour=15,
                           misfire_grace_time=300)
-        scheduler.add_job(self.bill_reminder, "cron", day="20-24", hour=14,
+        scheduler.add_job(self.bill_reminder, "cron", day="20-25", hour=13,
                           misfire_grace_time=300)
         scheduler.start()
 
