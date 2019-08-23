@@ -67,7 +67,7 @@ class Client(discord.Client):
                        f"```"
                        f"{' Kr, '.join([str(bill) for bill in bills])} Kr"
                        f"```"
-                       f"Madeleine, Ludvig, Sam and Elias each pay ```{total / 4} Kr```")
+                       f"Madeleine, Ludvig, Sam and Elias each pay ```{ceil(total / 4)} Kr```")
             await channel.send(message)
 
     async def search_channel_for_bills(self) -> List[str]:
