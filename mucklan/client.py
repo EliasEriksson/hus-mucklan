@@ -9,6 +9,7 @@ from datetime import datetime as dt
 from datetime import timedelta as td
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from math import ceil
+import re
 
 
 class Client(discord.Client):
@@ -97,6 +98,18 @@ class Client(discord.Client):
         if not user.dm_channel:
             await user.create_dm()
 
+    async def on_message(self, message: discord.Message):
+        print(message)
+        if message.author.id == self.bill_manager_id:
+            print(message.author)
+            if re.fullmatch(r"^/rent$", message.content.lower()):
+                try:
+                    await message.delete()
+                except (discord.errors.NotFound, discord.errors.Forbidden):
+                    pass
+                print("starting")
+                await self.anounce_rent()
+
     async def on_ready(self):
         print("Is booted up and ready to go!")
 
@@ -104,11 +117,10 @@ class Client(discord.Client):
 
         scheduler.add_job(self.who_cleans_what, "cron", day_of_week=6, hour=10,
                           misfire_grace_time=300)
-
-        scheduler.add_job(self.anounce_rent, "cron", day=25, hour=15,
-                          misfire_grace_time=300)
         scheduler.add_job(self.bill_reminder, "cron", day="20-25", hour=13,
                           misfire_grace_time=300)
+        # scheduler.add_job(self.anounce_rent, "cron", day=25, hour=15,
+        #                   misfire_grace_time=300)
         scheduler.start()
 
     def run(self):
