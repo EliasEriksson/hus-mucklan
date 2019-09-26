@@ -9,7 +9,6 @@ from datetime import datetime as dt
 from datetime import timedelta as td
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from math import ceil
-import re
 
 
 class Client(discord.Client):
@@ -22,23 +21,25 @@ class Client(discord.Client):
     clean_message: str
     residents: List[int]
     todos: List[str]
+    cleaning_decider: int
 
     def __init__(self, file: str):
         super(Client, self).__init__()
 
+        self.file = file
         with open(Path(PATH).joinpath(file)) as f:
             for key, setting in json.load(f).items():
                 setattr(self, key, setting)
 
         self.cleaning_areas = {index: todo for index, todo in enumerate(self.todos)}
-        self.cleaning_decider = 0
 
     async def who_cleans_what(self):
-        cleaning = [(self.cleaning_decider + i) % len(self.todos) for i in range(len(self.todos))]
+        assert len(self.residents) == len(self.todos)
+        cleaning = ((self.cleaning_decider + i) % len(self.todos) for i in range(len(self.todos)))
         assignments = ((self.residents[resident], self.cleaning_areas[area])
                        for resident, area in enumerate(cleaning))
-
         self.cleaning_decider = (self.cleaning_decider + 1) % len(self.todos)
+        self.save_setting(cleaning_decider=self.cleaning_decider)
 
         for resident, todo in assignments:
             user: discord.User = self.get_user(resident)
@@ -63,12 +64,20 @@ class Client(discord.Client):
             total = sum(bills)
 
             channel: discord.TextChannel = self.get_channel(self.bill_message_channel_id)
+            # message = (f"This month the total rent is ```{total} Kr```"
+            #            f"Each bill is: "
+            #            f"```"
+            #            f"{' Kr, '.join([str(bill) for bill in bills])} Kr"
+            #            f"```"
+            #            f"Sam and Frida pays ```3000 Kr``` and "
+            #            f"Madeleine, Ludvig and Elias pay ```{ceil((total - 6000) / 3)} Kr```")
             message = (f"This month the total rent is ```{total} Kr``` \n"
                        f"Each bill is: "
                        f"```"
                        f"{' Kr, '.join([str(bill) for bill in bills])} Kr"
                        f"```"
                        f"Madeleine, Ludvig, Sam and Elias each pay ```{ceil(total / 4)} Kr```")
+
             await channel.send(message)
 
     async def search_channel_for_bills(self) -> List[str]:
@@ -98,17 +107,14 @@ class Client(discord.Client):
         if not user.dm_channel:
             await user.create_dm()
 
-    async def on_message(self, message: discord.Message):
-        print(message)
-        if message.author.id == self.bill_manager_id:
-            print(message.author)
-            if re.fullmatch(r"^/rent$", message.content.lower()):
-                try:
-                    await message.delete()
-                except (discord.errors.NotFound, discord.errors.Forbidden):
-                    pass
-                print("starting")
-                await self.anounce_rent()
+    def save_setting(self, **kwargs) -> None:
+        path = Path(PATH).joinpath(self.file)
+        with open(path) as f:
+            setting = json.load(f)
+        for key, value in kwargs.items():
+            setting[key] = value
+        with open(path, "w") as f:
+            json.dump(setting, f, indent=4, ensure_ascii=False)
 
     async def on_ready(self):
         print("Is booted up and ready to go!")
@@ -117,11 +123,18 @@ class Client(discord.Client):
 
         scheduler.add_job(self.who_cleans_what, "cron", day_of_week=6, hour=10,
                           misfire_grace_time=300)
+        scheduler.add_job(self.anounce_rent, "cron", day=25, hour=15,
+                          misfire_grace_time=300)
         scheduler.add_job(self.bill_reminder, "cron", day="20-25", hour=13,
                           misfire_grace_time=300)
-        # scheduler.add_job(self.anounce_rent, "cron", day=25, hour=15,
-        #                   misfire_grace_time=300)
         scheduler.start()
+
+    async def on_message(self, message: discord.Message):
+        if message.author != self.user:
+            if message.content.lower() == "/hus räkningar":
+                await self.anounce_rent()
+            if message.content.lower() == "test":
+                await self.who_cleans_what()
 
     def run(self):
         print("Booting....")
