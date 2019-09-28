@@ -64,19 +64,20 @@ class Client(discord.Client):
             total = sum(bills)
 
             channel: discord.TextChannel = self.get_channel(self.bill_message_channel_id)
-            # message = (f"This month the total rent is ```{total} Kr```"
-            #            f"Each bill is: "
-            #            f"```"
-            #            f"{' Kr, '.join([str(bill) for bill in bills])} Kr"
-            #            f"```"
-            #            f"Sam and Frida pays ```3000 Kr``` and "
-            #            f"Madeleine, Ludvig and Elias pay ```{ceil((total - 6000) / 3)} Kr```")
-            message = (f"This month the total rent is ```{total} Kr``` \n"
+            message = (f"This month the total rent is ```{total} Kr```"
                        f"Each bill is: "
                        f"```"
                        f"{' Kr, '.join([str(bill) for bill in bills])} Kr"
                        f"```"
-                       f"Madeleine, Ludvig, Sam and Elias each pay ```{ceil(total / 4)} Kr```")
+                       f"Sam and Frida pays ```3000 Kr```"
+                       f"Madeleine, Ludvig and Elias pays ```{ceil((total - 6500) / 3)} Kr```"
+                       f"Amanda pays ```500 Kr```")
+            # message = (f"This month the total rent is ```{total} Kr``` \n"
+            #            f"Each bill is: "
+            #            f"```"
+            #            f"{' Kr, '.join([str(bill) for bill in bills])} Kr"
+            #            f"```"
+            #            f"Madeleine, Ludvig, Sam and Elias each pay ```{ceil(total / 4)} Kr```")
 
             await channel.send(message)
 
@@ -134,7 +135,7 @@ class Client(discord.Client):
             if message.content.lower() == "/hus räkningar":
                 await self.anounce_rent()
             if message.content.lower() == "test":
-                await self.who_cleans_what()
+                await self.anounce_rent()
 
     def run(self):
         print("Booting....")
