@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Generator, Tuple
 from . import pdf, PATH
 import json
 import discord
@@ -32,14 +32,19 @@ class Client(discord.Client):
                 setattr(self, key, setting)
 
         self.cleaning_areas = {index: todo for index, todo in enumerate(self.todos)}
-
-    async def who_cleans_what(self):
         assert len(self.residents) == len(self.todos)
-        cleaning = ((self.cleaning_decider + i) % len(self.todos) for i in range(len(self.todos)))
-        assignments = ((self.residents[resident], self.cleaning_areas[area])
-                       for resident, area in enumerate(cleaning))
-        self.cleaning_decider = (self.cleaning_decider + 1) % len(self.todos)
-        self.save_setting(cleaning_decider=self.cleaning_decider)
+
+    async def who_cleans_what(self, index_override: int = None):
+        index = index_override if index_override is not None else self.cleaning_decider
+
+        cleaning: Generator[int] = (
+            (index + i) % len(self.todos) for i in range(len(self.todos)))
+
+        assignments: Generator[Tuple[int, str]] = (
+            (self.residents[resident], self.cleaning_areas[area])
+            for resident, area in enumerate(cleaning))
+
+        self.cleaning_decider = (index + 1) % len(self.todos)
 
         for resident, todo in assignments:
             user: discord.User = self.get_user(resident)
@@ -48,6 +53,7 @@ class Client(discord.Client):
 
         channel: discord.TextChannel = self.get_channel(self.cleaning_channel)
         await channel.send(self.clean_message)
+        self.save_setting(cleaning_decider=self.cleaning_decider)
 
     async def bill_reminder(self):
         if self.search_channel_for_bills():
@@ -120,7 +126,7 @@ class Client(discord.Client):
     async def on_ready(self):
         print("Is booted up and ready to go!")
 
-        scheduler = AsyncIOScheduler()
+        scheduler = AsyncIOScheduler(event_loop=self.loop)
 
         scheduler.add_job(self.who_cleans_what, "cron", day_of_week=6, hour=10,
                           misfire_grace_time=300)
@@ -134,8 +140,12 @@ class Client(discord.Client):
         if message.author != self.user:
             if message.content.lower() == "/hus räkningar":
                 await self.anounce_rent()
-            if message.content.lower() == "test":
-                await self.anounce_rent()
+            elif "/hus städ" in message.content.lower():
+                mes = message.content.split(" ")
+                if mes[-1].isnumeric():
+                    await self.who_cleans_what(int(mes[-1]))
+                else:
+                    await self.who_cleans_what()
 
     def run(self):
         print("Booting....")
