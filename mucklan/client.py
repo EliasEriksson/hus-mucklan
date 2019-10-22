@@ -128,10 +128,10 @@ class Client(discord.Client):
 
         scheduler = AsyncIOScheduler(event_loop=self.loop)
 
-        scheduler.add_job(self.who_cleans_what, "cron", day_of_week=6, hour=10,
-                          misfire_grace_time=300)
-        scheduler.add_job(self.anounce_rent, "cron", day=25, hour=15,
-                          misfire_grace_time=300)
+        # scheduler.add_job(self.who_cleans_what, "cron", day_of_week=6, hour=10,
+        #                   misfire_grace_time=300)
+        # scheduler.add_job(self.anounce_rent, "cron", day=25, hour=15,
+        #                   misfire_grace_time=300)
         scheduler.add_job(self.bill_reminder, "cron", day="20-25", hour=13,
                           misfire_grace_time=300)
         scheduler.start()
