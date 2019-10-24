@@ -56,7 +56,7 @@ class Client(discord.Client):
         self.save_setting(cleaning_decider=self.cleaning_decider)
 
     async def bill_reminder(self):
-        if self.search_channel_for_bills():
+        if not await self.search_channel_for_bills():
             bill_manager: discord.User = self.get_user(self.bill_manager_id)
             await self.asure_dm_exists(bill_manager)
             await bill_manager.send(self.bill_reminder_message)
@@ -125,6 +125,7 @@ class Client(discord.Client):
 
     async def on_ready(self):
         print("Is booted up and ready to go!")
+        await self.bill_reminder()
 
         scheduler = AsyncIOScheduler(event_loop=self.loop)
 
